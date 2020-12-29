@@ -1,0 +1,10 @@
+#!/bin/bash
+while :
+do
+  if [ "$(tasklist.exe | grep -i "pdftoprinter")" != "" ]; then
+    sleep 1
+    continue
+  fi
+  pdftoprinter.exe "$@"
+  break
+done

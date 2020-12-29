@@ -1,0 +1,17 @@
+#!/bin/bash
+if (( is_wsl )); then
+  #tmpdir=$(mktemp -d --tmpdir="$(wslpath 'C:\Users\Martijn\productlabel_tmp')")
+  #cd "$tmpdir"
+  #cat /dev/stdin > output.pdf
+  #(pdftoprinter-async "$(wslpath -w "$tmpdir/output.pdf")"; rm -rf "$tmpdir") &
+  pdftoprinter-system-schedule
+else
+  tmpfile=$(mktemp --suffix=.pdf)
+  #trap "rm '$tmpfile'" EXIT
+  #echo "Made tmpfile: $tmpfile"
+  cat /dev/stdin > "$tmpfile"
+  firefox "$tmpfile"
+  #lpr "$tmpfile"
+  #rm "$tmpfile"
+  #echo "Viewing to-be-printed PDF in firefox."
+fi

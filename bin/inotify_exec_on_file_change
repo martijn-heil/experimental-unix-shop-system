@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Example usecase:
+# inotify_exec_on_file_change.sh /path/to/paper.tex pdflatex paper.tex
+
+dirn="$(dirname "$1")"
+filen="$(basename "$1")"
+shift 1
+
+#echo "Watching directory $dirn for changes of file $filen . Watching directory insteaf of file to overcome behaviour of many text editors that replace file - Thanks to Giles and see his answer https://superuser.com/a/181543/81861 for more details. In case of matching even I execute:" $@
+
+#inotifywait -m -e close_write,moved_to,create  "$dirn" |
+#inotifywait -m -e close_write  "$dirn" |
+#while read -r directory events filename; do
+inotifywait -m -e close_write --format '%f'  "$dirn" |
+while read -r filename; do
+  #echo "[inotifywait] "$directory $events $filename
+  if [ "$filename" = "$filen" ]; then
+    #echo "[executing] " "$@" 1>&2
+    "$@"
+  #else
+    #echo "[not executing] Due to mismatch in filename. Expected \"$filen\", but received event about \"$filename\"" 1>&2
+  fi
+done
+
+#echo loop reading from inotifywait finished with status $?

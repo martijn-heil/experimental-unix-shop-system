@@ -1,0 +1,67 @@
+<html>
+  <style>
+    body {
+      margin-top: 8vh;
+      margin-bottom: 8vh;
+      margin-right: 2vw;
+      margin-left: 2vw;
+      max-height: 100vh;
+      font-weight: bold;
+      font-family: Arial, sans-serif;
+    }
+
+    #description {
+      min-width: 100%;
+      text-align: center;
+      font-size: 0.7rem; /* 0.7rem voor 3 lijnen */
+      margin: 0;
+      padding: 0;
+    }
+
+    #container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      /*flex-wrap: wrap; in some cases this might be what you want.. but not currently*/
+    }
+
+    #supercontainer {
+      height: 84vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    #barcode-container {
+      height: 60vh;
+    }
+
+    #barcode {
+      width: 65vw;
+      height: 100%;
+    }
+
+    #price-container {
+      font-size: 0.9rem;
+    }
+
+    #description {
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 3; /* number of lines to show */
+      -webkit-box-orient: vertical;
+    }
+  </style>
+  <div id="supercontainer">
+    <p id="description">$description</p>
+    <div id="container">
+      <div id="barcode-container">
+          <img id="barcode" src="$barcode"></img>
+      </div>
+      <div id="price-container">
+        &euro; $price
+      </div>
+    </div>
+  </div>
+</html>

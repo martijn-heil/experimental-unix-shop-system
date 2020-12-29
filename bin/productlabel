@@ -1,0 +1,195 @@
+#!/bin/bash
+#
+# productlabel A program to generate PDF product labels
+# Copyright (C) 2020  Martijn Heil
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+# Saner programming env: these switches turn some bugs into errors
+set -o errexit -o pipefail -o noclobber -o nounset
+
+VERSION="0.1.0"
+PROGRAMNAME="productlabel"
+
+function print_help {
+  echo "\
+$PROGRAMNAME $VERSION
+Martijn Heil <m.heil375@gmail.com>
+Copyright (c) 2020 Martijn Heil
+
+Generate product label PDF.
+
+USAGE:
+    $PROGRAMNAME [FLAGS] [OPTIONS]
+
+FLAGS:
+    -h, --help        Prints help information
+    -v, --version     Prints version information
+
+OPTIONS:
+    --barcode <BARCODE>             Barcode to put on label.
+    --price <PRICE>                 Price to put on label.
+    --description <DESCRIPTION>     Description to put on label.
+    --page-width <WIDTH>            Real unit page width.
+    --page-height <HEIGHT>          Real unit page height.
+    --template <PATH>               Path to HTML template file to use.
+                                      NEVER allow this to come from an untrusted source!
+                                      Unsanitized HTML can lead to complete takeover
+                                      of the current machine!"
+}
+
+function print_version {
+  echo "$PROGRAMNAME $VERSION"
+}
+
+
+# Check if enhanced getopt is available
+! getopt --test > /dev/null
+if [[ ${PIPESTATUS[0]} -ne 4 ]]; then
+  echo "I'm sorry, `getopt --test` failed in this environment." >> /dev/stderr
+  echo "This probably means that there is no enhanced getopt available." >> /dev/stderr
+  exit 1
+fi
+
+OPTIONS=h,v
+LONGOPTS=translation:,output:,help,bounding-polygon:,bounding-polygon-file:
+LONGOPTS=help,barcode:,price:,description:,template:,page-height:,page-width:
+
+! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
+if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+  exit 2
+fi
+
+eval set -- "$PARSED"
+
+BARCODE=-
+PRICE='-!'
+DESCRIPTION=-
+TEMPLATE=-
+PAGE_WIDTH=-
+PAGE_HEIGHT=-
+
+while true; do
+  case "$1" in
+    --barcode)
+    BARCODE="$2"
+    shift 2
+    ;;
+
+    --price)
+    PRICE="$2"
+    shift 2
+    ;;
+
+    --description)
+    DESCRIPTION=$2
+    shift 2
+    ;;
+
+    --template)
+    TEMPLATE=$2
+    shift 2
+    ;;
+
+    --page-width)
+    PAGE_WIDTH=$2
+    shift 2
+    ;;
+
+    --page-height)
+    PAGE_HEIGHT=$2
+    shift 2
+    ;;
+
+    -h|--help)
+    print_help
+    exit 0
+    ;;
+
+    -v|--version)
+    print_version
+    exit 0
+    ;;
+
+    --)
+    shift
+    break
+    ;;
+
+    *)
+    echo "Programming error" >> /dev/stderr
+    exit 3
+    ;;
+  esac
+done
+
+
+if [ "$BARCODE" = '-' ]; then
+  echo "Error: Got no barcode." >> /dev/stderr
+  exit 0
+fi
+
+if [ "$DESCRIPTION" = '-' ]; then
+  echo "Error: Got no description." >> /dev/stderr
+  exit 0
+fi
+
+if [ "$PRICE" = '-!' ]; then
+  echo "Error: Got no price." >> /dev/stderr
+  exit 0
+fi
+
+if [ "$TEMPLATE" = '-' ]; then
+  echo "Error: Got no template." >> /dev/stderr
+  exit 0
+fi
+
+if [ "$PAGE_HEIGHT" = '-' ]; then
+  echo "Error: Got no page height." >> /dev/stderr
+  exit 0
+fi
+
+if [ "$PAGE_WIDTH" = '-' ]; then
+  echo "Error: Got no page width." >> /dev/stderr
+  exit 0
+fi
+
+
+set -e
+tmpdir=$(mktemp -d)
+
+function cleanup {
+  rm -rf "$tmpdir"
+}
+
+trap cleanup EXIT
+set +e
+
+echo "$BARCODE" | barcode -g "-0-0" -Sn -e ean13 > "$tmpdir/barcode.svg"
+
+< "$TEMPLATE" \
+  sed -E "s/\\\$barcode/file:\/\/$(echo "$tmpdir/barcode.svg" | regescreplacement.sh)/" | \
+  sed -E "s/\\\$price/$(echo "$PRICE" | regescreplacement.sh)/" | \
+  sed -E "s/\\\$description/$(echo "$DESCRIPTION" | regescreplacement.sh)/" > "$tmpdir/data.html"
+  web2pdf --height "$PAGE_HEIGHT" --width "$PAGE_WIDTH" "file://$tmpdir/data.html" #> "$tmpdir/output.pdf"
+  #cat "$tmpdir/output.pdf"
+  #wkhtmltopdf --allow "$tmpdir" \
+  #  --page-height "$PAGE_HEIGHT" \
+  #  --page-width "$PAGE_WIDTH" \
+  #  --margin-top 0 \
+  #  --margin-right 0 \
+  #  --margin-bottom 0 \
+  #  --margin-left 0 \
+  #  - output.pdf 1>&2

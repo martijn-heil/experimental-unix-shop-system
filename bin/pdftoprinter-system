@@ -1,0 +1,15 @@
+#!/bin/bash
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+mkdir "/run/user/$UID/pdftoprinter"
+
+wintempdir=$(wslpath "$(cmd.exe /c echo %TEMP%)")
+ourtempdir=$(mktemp -d --tmpdir="$wintempdir")
+ln -s "$ourtempdir" "/run/user/$UID/pdftoprinter/wintempdir"
+
+pipe="/run/user/$UID/pdftoprinter/documents.fifo"
+mkfifo "$pipe"
+(while :; do sleep 2147483647; done > "$pipe") &
+
+cat "$pipe" | xargs -d '\n' -n1 bash -c "pdftoprinter.exe \"\$(wslpath -w \"\$@\")\"; rm \"\$@\""
+rm -rf "/run/user/$UID/pdftoprinter/wintempdir/"
+rm -rf "/run/user/$UID/pdftoprinter"

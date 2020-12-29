@@ -1,0 +1,107 @@
+#!/bin/bash
+csvfile="$1"
+barcode_column="$2"
+delim="$3"
+searchable_columns="$4"
+cmd="$5"
+set -- "${@:5}"
+
+tempdir="$(mktemp -d)"
+if [ $? != 0 ]; then exit 1; fi
+tempexecutable="$(mktemp --tmpdir="$HOME/tmp" --suffix=".sh")"
+if [ $? != 0 ]; then
+  rm -rf "$tempdir"
+  exit 1
+fi
+
+function cleanup {
+  rm -rf "$tempdir"
+  rm "$tempexecutable"
+}
+
+trap cleanup EXIT
+
+# We re-populate our tempdir with generated data whenever the original CSV file changes.
+cat << 'EOF' > "$tempexecutable"
+#!/bin/bash
+csvfile="$1"
+barcode_column="$2"
+tempdir="$3"
+colorder="$barcode_column,$(< "$csvfile" csvstat -d ',' -n | grep --invert-match -E "^\s*[0-9]+: $barcode_column\$" | sed -E "s/^\s+([0-9]): .*/\1/" | tr '\n' ',' | sed -E 's/(.*),/\1\n/')"
+< "$csvfile" csvcut -d ',' -c "$colorder" > "$tempdir/data.csv"
+< "$tempdir/data.csv" csvquote | tail -n +2 | sort -k 1,1 -t , > "$tempdir/data_sorted.csv"
+EOF
+chmod u+x "$tempexecutable"
+bash -c "$tempexecutable \"\$@\"" "null" "$csvfile" "$barcode_column" "$tempdir"
+
+inotify_exec_on_file_change "$csvfile" bash -c "$tempexecutable \"\$@\"" "null" "$csvfile" "$barcode_column" "$tempdir" &> /dev/null &
+
+
+
+function do_barcode_search {
+  echo -n "Enter barcode (press enter to go to manual search): "
+  read -r barcode
+  if [ "$barcode" = "" ]; then
+    return 2
+  fi
+  #results=$(cat "$tempdir/data.csv" | csvgrep -d , -c "$barcode_column" -r "^$barcode$")
+  results="$(cat <(head -n1 "$tempdir/data.csv") <(look -t, "$barcode" "$tempdir/data_sorted.csv" | csvquote -u))"
+  resultcount=$(echo "$results" | csvrowcount)
+  echo "Got $resultcount results."
+  if [ "$resultcount" -le "0" ]; then
+    return 1
+  fi
+  return 0
+}
+
+function do_manual_search {
+  while :
+  do
+    echo -n "Enter search query (press enter to stop): "
+    read -r query
+    if [ "$query" = "" ]; then
+      return 1
+    fi
+    # (?i) is regex flag for case insensivity
+    results=$(< "$csvfile" csvgrep -d "$delim" -r "(?i)$query" -c "$searchable_columns" -a)
+    resultcount=$(echo "$results" | csvrowcount)
+    echo "Got $resultcount results."
+    if [ "$resultcount" = "0" ]; then
+      continue
+    fi
+    return 0
+  done
+}
+
+while :
+do
+  echo -e '\a'
+  do_barcode_search
+  do_barcode_search_result=$?
+  if [ $do_barcode_search_result -eq 2 ]; then # request for manual search
+    do_manual_search
+    if [ "$?" = 1 ]; then # aborted
+      continue
+    elif [ $resultcount = "1" ]; then
+      echo "Got product:"
+      echo "$results" | csvlook -I
+      echo "Continue? [Y/n]"
+      read -r cont
+      if [ "$cont" != ''  ] && [ "$cont" != "y" ]; then
+        continue
+      fi
+    fi
+  elif [ $do_barcode_search_result -eq 1 ]; then # no results from barcode search
+    continue
+  fi
+
+  result=$(csvselectrow <(echo "$results"))
+  csvselectresult=$?
+  if [ $csvselectresult -eq 2 ]; then # aborted
+    echo "Aborted selection."
+    continue
+  fi
+
+  # TODO maybe add option for async or not async callback
+  echo "$result" | bash -c "$@" &
+done

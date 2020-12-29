@@ -1,0 +1,8 @@
+#!/bin/sh
+firstresult="$(sed -E '/^\"(.*)\"/!{q100}; {s/^\"(.*)\"/\1/}')"
+firstresultstatus=$?
+if [ $firstresultstatus -ne 100 ]; then
+  echo "$firstresult" | sed 's/\"\"/\"/g'
+else
+  echo "$firstresult"
+fi

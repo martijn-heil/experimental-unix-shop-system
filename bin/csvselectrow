@@ -1,0 +1,32 @@
+#!/bin/bash
+inputfile=$1
+
+if [ "$inputfile" = '' ]; then
+  echo "Error: got no input file"
+  exit 1
+fi
+
+tmpdir="$(mktemp -d)"
+
+cp "$1" "$tmpdir/input.csv"
+
+rowcount=$(< "$tmpdir/input.csv" csvrowcount)
+if [ "$rowcount" -le "1" ]; then
+  cat "$tmpdir/input.csv"
+  rm -rf "$tmpdir"
+  exit 0
+fi
+
+< "$tmpdir/input.csv" csvsort -I -l > "$tmpdir/input_numbered.csv"
+< "$tmpdir/input_numbered.csv" sed -E '1 s/^line_number(.*)$/ROW NUMBER\1/' | csvlook -I >> /dev/stderr
+
+echo -n "Select row number (press enter to abort selection): " >> /dev/stderr
+read -r num
+if [ "$num" = '' ]; then
+  rm -rf "$tmpdir"
+  exit 2
+fi
+
+< "$tmpdir/input_numbered.csv" csvgrep -c "line_number" -r "^$num\$" | csvcut --not-columns 1
+
+rm -rf "$tmpdir"

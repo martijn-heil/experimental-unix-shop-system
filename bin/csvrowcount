@@ -1,0 +1,2 @@
+#!/bin/sh
+csvstat -d ',' --count | sed 's/Row count\: //'

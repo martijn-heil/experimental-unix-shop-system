@@ -1,0 +1,5 @@
+#!/bin/bash
+wintempdir="/run/user/$UID/pdftoprinter/wintempdir/"
+tempfile="$(mktemp --tmpdir="$wintempdir" --suffix=".pdf")"
+cat /dev/stdin >> "$tempfile"
+echo "$tempfile" >> "/run/user/$UID/pdftoprinter/documents.fifo"
