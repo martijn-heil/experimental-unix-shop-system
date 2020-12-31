@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# Usage: vetusxml2megawincsv.sh <FILE> > result.csv
+tmpdir=$(mktemp -d)
+
+function cleanup {
+  rm -rf "$tmpdir"
+}
+
+trap cleanup EXIT
+
+#cat /dev/stdin > "$tmpdir/dos.xml"
+dos2unix -n "$1" "$tmpdir/unixified.xml" 2>/dev/null
+sed -i 's/UTF-16/UTF-8/' "$tmpdir/unixified.xml"
+#rm "$tmpdir/dos.xml"
+xml2csv --output "$tmpdir/csvified.csv" --input "$tmpdir/unixified.xml" --columns No,PrdNm,ItemName,Sate,Cats,StndDsc,DscGrp,Brcd,CtlgPg,Wght,Dim,TrfNo,Pctrs,StckLvl,GrossPrice --item-name /ProdList/Item --trim
+rm "$tmpdir/unixified.xml"
+
+< "$tmpdir/csvified.csv" csvcut -c 'No,Brcd,StndDsc,Wght,GrossPrice' > "$tmpdir/cut.csv"
+
+rm "$tmpdir/csvified.csv"
+
+newheader="$(< "$tmpdir/cut.csv" head -n1 | \
+    sed 's/No/ARTIKEL NR./' | \
+    sed 's/Brcd/BARCODE STUK/' | \
+    sed 's/StndDsc/LANGE OMSCHRIJVING1/' | \
+    sed 's/Wght/N. GEWICHT/' | \
+    sed 's/GrossPrice/Aankoopprijs/'),LEVERANCIER,MUNTHEID" # VERK.PRIJS3 is 'particulier', mocht dat nodig zijn TODO controleer of GrossPrice inkoopprijs of adviesprijs is
+# TODO moeten de punten decimalen naar komma's?
+
+cat <(echo "$newheader") <(< "$tmpdir/cut.csv" tail -n +2 | csvquote | sed -E 's/^(.*)$/\1,VETUS,EUR/' | csvquote -u)
