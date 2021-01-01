@@ -20,12 +20,20 @@ rm "$tmpdir/unixified.xml"
 
 rm "$tmpdir/csvified.csv"
 
-newheader="$(< "$tmpdir/cut.csv" head -n1 | \
-    sed 's/No/ARTIKEL NR./' | \
+newheader="ARTIKEL NR.,$(< "$tmpdir/cut.csv" head -n1 | \
+    sed 's/No/LEVER. ART. Nr./' | \
     sed 's/Brcd/BARCODE STUK/' | \
     sed 's/StndDsc/LANGE OMSCHRIJVING1/' | \
     sed 's/Wght/N. GEWICHT/' | \
     sed 's/GrossPrice/Aankoopprijs/'),LEVERANCIER,MUNTHEID" # VERK.PRIJS3 is 'particulier', mocht dat nodig zijn TODO controleer of GrossPrice inkoopprijs of adviesprijs is
 # TODO moeten de punten decimalen naar komma's?
 
-cat <(echo "$newheader") <(< "$tmpdir/cut.csv" tail -n +2 | csvquote | sed -E 's/^(.*)$/\1,VETUS,EUR/' | csvquote -u)
+cat \
+  <(echo "$newheader") \
+  <(paste -d , \
+    `# Populate 'ARTIKEL NR.' column with a copy of 'LEVER. ART. Nr.' values prefixed by 'VETUS-'` \
+    <(< "$tmpdir/cut.csv" tail -n +2 | csv2nix | cut -d , -f 1 | sed -E 's/(.*)/VETUS-\1/') \
+    \
+    `# Populate 'LEVERANCIER' & 'MUNTHEID' columns.` \
+    <(< "$tmpdir/cut.csv" tail -n +2 | csv2nix | sed -E 's/^(.*)$/\1,VETUS,EUR/') \
+    | nix2csv)
