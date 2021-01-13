@@ -180,13 +180,4 @@ echo "$BARCODE" | barcode -g "-0-0" -Sn > "$tmpdir/barcode.svg"
   sed -E "s/\\\$barcode/file:\/\/$(echo "$tmpdir/barcode.svg" | regescreplacement.sh)/" | \
   sed -E "s/\\\$price/$(echo "$PRICE" | regescreplacement.sh)/" | \
   sed -E "s/\\\$description/$(echo "$DESCRIPTION" | regescreplacement.sh)/" > "$tmpdir/data.html"
-  web2pdf --height "$PAGE_HEIGHT" --width "$PAGE_WIDTH" "file://$tmpdir/data.html" #> "$tmpdir/output.pdf"
-  #cat "$tmpdir/output.pdf"
-  #wkhtmltopdf --allow "$tmpdir" \
-  #  --page-height "$PAGE_HEIGHT" \
-  #  --page-width "$PAGE_WIDTH" \
-  #  --margin-top 0 \
-  #  --margin-right 0 \
-  #  --margin-bottom 0 \
-  #  --margin-left 0 \
-  #  - output.pdf 1>&2
+  web2pdf --height "$PAGE_HEIGHT" --width "$PAGE_WIDTH" "file://$tmpdir/data.html"
