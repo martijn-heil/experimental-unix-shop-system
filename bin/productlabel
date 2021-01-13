@@ -44,10 +44,7 @@ OPTIONS:
     --description <DESCRIPTION>     Description to put on label.
     --page-width <WIDTH>            Real unit page width.
     --page-height <HEIGHT>          Real unit page height.
-    --template <PATH>               Path to HTML template file to use.
-                                      NEVER allow this to come from an untrusted source!
-                                      Unsanitized HTML can lead to complete takeover
-                                      of the current machine!"
+    --template <PATH>               Path to HTML template file to use."
 }
 
 function print_version {
