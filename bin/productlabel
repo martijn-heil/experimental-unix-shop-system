@@ -177,7 +177,7 @@ function cleanup {
 trap cleanup EXIT
 set +e
 
-echo "$BARCODE" | barcode -g "-0-0" -Sn -e ean13 > "$tmpdir/barcode.svg"
+echo "$BARCODE" | barcode -g "-0-0" -Sn > "$tmpdir/barcode.svg"
 
 < "$TEMPLATE" \
   sed -E "s/\\\$barcode/file:\/\/$(echo "$tmpdir/barcode.svg" | regescreplacement.sh)/" | \
