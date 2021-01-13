@@ -1,0 +1,6 @@
+#!/bin/bash
+# Get column index, counted from 1
+colname="$1"
+header="$(csv2nix)"
+delim=','
+<<< "$header" tr "$delim" '\n' | csvquote -u | grep -F --line-regexp --line-number "$1" | sed -E 's/^([0-9]+):.*$/\1/'

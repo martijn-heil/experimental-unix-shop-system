@@ -1,0 +1,109 @@
+#!/bin/bash
+set -euo pipefail
+
+VERSION="0.1.0"
+PROGRAMNAME="csvgetcolval"
+
+
+function print_help {
+  echo "\
+$PROGRAMNAME $VERSION
+Martijn Heil <m.heil375@gmail.com>
+Copyright (c) 2021 Martijn Heil
+
+Get value of first CSV row based on column name.
+Input should be passed to stdin looking like this:
+<HEADER> (newline)
+<DATA ROW TO GET VALUE FROM> (newline) ...
+
+USAGE:
+    $PROGRAMNAME [FLAGS] [OPTIONS]
+
+FLAGS:
+    -h, --help        Prints help information
+    -v, --version     Prints version information
+
+OPTIONS:
+    -n, --name=COLUMN_NAME    Name of column to get value from.
+    -i, --index=COLUMN_INDEX  Index of column to get value from, counted from 1.
+    -d, --delim=DELIMETER     CSV data delimeter, defaults to comma."
+}
+
+function print_version {
+  echo "$PROGRAMNAME v$VERSION"
+}
+
+# Check if enhanced getopt is available
+! getopt --test > /dev/null
+if [[ ${PIPESTATUS[0]} -ne 4 ]]; then
+  echo "I'm sorry, `getopt --test` failed in this environment." >> /dev/stderr
+  echo "This probably means that there is no enhanced getopt available." >> /dev/stderr
+  exit 1
+fi
+
+OPTIONS=n:i:d:h:v
+LONGOPTS=name:,index:,delim:,help,version
+
+! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
+if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+  exit 2
+fi
+
+eval set -- "$PARSED"
+# bounding polygon in Well Known Text (WKT), de coordinaten in RD
+INDEX=-
+NAME=-
+DELIM=,
+
+while true; do
+  case "$1" in
+    -n|--name)
+    NAME="$2"
+    shift 2
+    ;;
+
+    -i|--index)
+    INDEX="$2"
+    shift 2
+    ;;
+
+    -d|--delim)
+    DELIM="$2"
+    shift 2
+    ;;
+
+    -h|--help)
+    print_help
+    exit 0
+    ;;
+
+    -v|--version)
+    print_version
+    exit 0
+    ;;
+
+    --)
+    shift
+    break
+    ;;
+
+    *)
+    echo "Programming error" >> /dev/stderr
+    exit 3
+    ;;
+  esac
+done
+
+if [ "$NAME" = '-' ] && [ "$INDEX" = '-' ]; then
+  echo "Error: you must provide either option -i, --index or -n, --name" 2>&1
+  exit 4
+fi
+
+data="$(csv2nix)"
+
+index="$INDEX"
+if [ "$index" = '-' ]; then
+  index="$(<<< "$data" head -n1 | nix2csv | csvgetcolindex "$NAME")"
+fi
+
+<<< "$data" tail -n +2 | cut -f "$index" -d "$DELIM" | csvquote -u

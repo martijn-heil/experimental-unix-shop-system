@@ -3,10 +3,11 @@ barcode_column=$1
 description_column=$2
 price_column=$3
 
-product=$(cat /dev/stdin)
-barcode=$(echo "$product" | csvcut -q \" -c "$barcode_column" | csvformat -D ';' | tail -n +2 | csvremovequoting)
-description=$(echo "$product" | csvcut -q \"  -c "$description_column" | csvformat -D ';' | tail -n +2 | csvremovequoting)
-price=$(echo "$product" | csvcut -q \" -c "$price_column" | csvformat -D ';' | tail -n +2 | csvremovequoting)
+product="$(csv2nix | head -n2 | nix2csv)" # Ensure we only have one product.
+barcode="$(<<< "$product" csvgetcolval -n "$barcode_column")"
+description="$(<<< "$product" csvgetcolval -n "$description_column")"
+price="$(<<< "$product" csvgetcolval -n "$price_column")"
+
 if [ "$price" = "" ] || [ "$price" = '0,00' ]; then
   price="????"
 else
