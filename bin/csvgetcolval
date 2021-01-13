@@ -101,6 +101,10 @@ fi
 
 data="$(csv2nix)"
 
+if [ "$data" = '' ]; then
+  exit 0
+fi
+
 index="$INDEX"
 if [ "$index" = '-' ]; then
   index="$(<<< "$data" head -n1 | nix2csv | csvgetcolindex "$NAME")"

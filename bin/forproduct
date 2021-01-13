@@ -1,4 +1,6 @@
 #!/bin/bash
+#set -euo pipefail -o functrace
+
 csvfile="$1"
 barcode_column="$2"
 delim="$3"
@@ -21,6 +23,13 @@ function cleanup {
 
 trap cleanup EXIT
 
+function failure {
+  local lineno=$1
+  local msg=$2
+  echo "Failed at $lineno: $msg" 1>&2
+}
+#trap 'failure ${LINENO} "$BASH_COMMAND"' ERR
+
 # We re-populate our tempdir with generated data whenever the original CSV file changes.
 cat << 'EOF' > "$tempexecutable"
 #!/bin/bash
@@ -37,7 +46,6 @@ bash -c "$tempexecutable \"\$@\"" "null" "$csvfile" "$barcode_column" "$tempdir"
 inotify_exec_on_file_change "$csvfile" bash -c "$tempexecutable \"\$@\"" "null" "$csvfile" "$barcode_column" "$tempdir" &> /dev/null &
 
 
-
 function do_barcode_search {
   echo -n "Enter barcode (press enter to go to manual search): "
   read -r barcode
@@ -51,6 +59,7 @@ function do_barcode_search {
   if [ "$resultcount" -le "0" ]; then
     return 1
   fi
+
   return 0
 }
 
@@ -65,6 +74,15 @@ function do_manual_search {
     # (?i) is regex flag for case insensivity
     results=$(< "$csvfile" csvgrep -d "$delim" -r "(?i)$query" -c "$searchable_columns" -a)
     resultcount=$(echo "$results" | csvrowcount)
+
+    if [ "$resultcount" -gt "1000" ]; then
+      echo -n "Got $resultcount results. Are you sure you want to view them all? [y/N]"
+      read -r query
+      if [ "$query" != "Y" ] && [ "$query" != "y" ]; then
+        return 1
+      fi
+    fi
+
     echo "Got $resultcount results."
     if [ "$resultcount" = "0" ]; then
       continue
@@ -75,6 +93,9 @@ function do_manual_search {
 
 while :
 do
+  # Need to declare this or else it will complain about unbound variables
+  results=''
+
   echo -e '\a'
   do_barcode_search
   do_barcode_search_result=$?
@@ -95,7 +116,7 @@ do
     continue
   fi
 
-  result=$(csvselectrow <(echo "$results"))
+  result="$(csvselectrow -i <(echo "$results"))"
   csvselectresult=$?
   if [ $csvselectresult -eq 2 ]; then # aborted
     echo "Aborted selection."
