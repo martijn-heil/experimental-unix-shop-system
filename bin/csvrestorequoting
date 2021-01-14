@@ -2,4 +2,4 @@
 rschar="$(echo -ne '\x1E')"
 uschar="$(echo -ne '\x1F')"
 
-sed 's/"/""/g' | sed -E "s/([^,]*[$rschar$uschar][^,]*)/\"\1\"/g"
+sed 's/"/""/g' | sed -E "s/([^,]*[$rschar$uschar\"][^,]*)/\"\1\"/g"
