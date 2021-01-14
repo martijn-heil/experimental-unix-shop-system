@@ -6,7 +6,7 @@ function failure {
   local msg=$2
   echo "Failed at $lineno: $msg" 1>&2
 }
-trap 'failure ${LINENO} "$BASH_COMMAND"' ERR
+#trap 'failure ${LINENO} "$BASH_COMMAND"' ERR
 
 VERSION="0.1.0"
 PROGRAMNAME="csvselectrow"
@@ -29,7 +29,9 @@ USAGE:
 FLAGS:
     -h, --help        Prints help information
     -v, --version     Prints version information
-    -i, --interactive Use a interactive dialog."
+    -d, --dialog      Use dialog.
+        --fzf         Use fzf.
+        --no-search   Disable search (has no effect without --fzf)."
 }
 
 function print_version {
@@ -44,8 +46,8 @@ if [[ ${PIPESTATUS[0]} -ne 4 ]]; then
   exit 1
 fi
 
-OPTIONS=:n:i:d:h:v
-LONGOPTS=:name:,index:,delim:,help,version
+OPTIONS=dhv
+LONGOPTS=dialog,fzf,no-search,help,version
 
 ! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
 if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
@@ -54,12 +56,22 @@ fi
 
 eval set -- "$PARSED"
 # bounding polygon in Well Known Text (WKT), de coordinaten in RD
-INTERACTIVE=false
+DIALOG=false
+FZF=false
+SEARCH=true
 
 while true; do
   case "$1" in
-    -i|--interactive)
-    INTERACTIVE=true
+    -d|--dialog)
+    DIALOG=true
+    ;;
+
+    --fzf)
+    FZF=true
+    ;;
+
+    --no-search)
+    SEARCH=false
     ;;
 
     -h|--help)
@@ -122,8 +134,34 @@ function do_line_based {
   done
 }
 
+function do_fzf_based {
+  if [ "$SEARCH" = true ]; then
+    local fzfresult="$(< "$tmpdir/input_numbered.csv" csvlook -I -d ',' | tail -n +3 | fzf)"
+    local fzfexitcode=$?
+  else
+    local fzfresult="$(< "$tmpdir/input_numbered.csv" csvlook -I -d ',' | tail -n +3 | fzf --disabled)"
+    local fzfexitcode=$?
+  fi
 
-if [ "$INTERACTIVE" = true ]; then
+  if [ "$fzfexitcode" = 130 ]; then # Aborted by user
+    exit 2
+  elif [ "$fzfexitcode" = 2 ]; then # Error
+    echo "Error: fzf returned exit code 2." >> /dev/stderr
+    exit 1
+  elif [ "$fzfresult" = '' ]; then # Assume aborted by user
+    exit 2
+  fi
+
+  num="$(<<< "$fzfresult" sed -E 's/^\| ([0-9]+).*$/\1/' | grep -E '^[0-9]+$')"
+  echo "num: $num" >> /dev/stderr
+  if [ "$num" = '' ]; then
+    echo "Error: could not parse choice number." >> /dev/stderr
+    exit 1
+  fi
+}
+
+function do_dialog_based {
+
   # dialog doesn't like double quotes in the data.. as this is only for display to the user,
   # we replace all double quotes with two single quotes, as it looks somewhat similar and hopefully gets the intent across.
   < "$tmpdir/input_numbered.csv" csv2nix | tail -n +2 | sed "s/\"/''/g" | sed -E 's/^([0-9]*)(.*)$/\1 "\2"/' | sed -E 's/,/| /g' | csvquote -u > "$tmpdir/dialog_input.txt"
@@ -146,6 +184,13 @@ if [ "$INTERACTIVE" = true ]; then
   if [ "$num" == '' ]; then
     exit 2
   fi
+}
+
+
+if [ "$FZF" = true ]; then
+  do_fzf_based
+elif [ "$DIALOG" = true ]; then
+do_dialog_based
 else
   do_line_based
 fi
