@@ -153,7 +153,6 @@ function do_fzf_based {
   fi
 
   num="$(<<< "$fzfresult" sed -E 's/^\| ([0-9]+).*$/\1/' | grep -E '^[0-9]+$')"
-  echo "num: $num" >> /dev/stderr
   if [ "$num" = '' ]; then
     echo "Error: could not parse choice number." >> /dev/stderr
     exit 1
