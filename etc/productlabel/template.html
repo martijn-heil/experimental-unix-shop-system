@@ -1,21 +1,26 @@
 <html>
   <style>
     body {
-      margin-top: 0;
-      margin-bottom: 0;
-      margin-right: 0;
-      margin-left: 0;
-      max-height: 100vh;
+      margin: 0;
+      height: 100vh;
+      width: 100vw;
       font-weight: bold;
       font-family: Arial, sans-serif;
     }
 
     #description {
-      min-width: 100%;
       text-align: center;
       font-size: 7.5pt; /* This exactly fits 2 lines of text in */
       margin: 0;
       padding: 0;
+      /* if rounded corners become a problem: */
+      padding-left: 1.5mm;
+      padding-right: 1.5mm;
+
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2; /* number of lines to show */
+      -webkit-box-orient: vertical;
     }
 
     #container {
@@ -26,7 +31,8 @@
     }
 
     #supercontainer {
-      height: 98vh;
+      height: 100vh;
+      width: 100vw;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -42,13 +48,6 @@
 
     #price-container {
       font-size: 0.9rem;
-    }
-
-    #description {
-      overflow: hidden;
-      display: -webkit-box;
-      -webkit-line-clamp: 2; /* number of lines to show */
-      -webkit-box-orient: vertical;
     }
   </style>
   <div id="supercontainer">
