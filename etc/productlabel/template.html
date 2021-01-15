@@ -1,10 +1,10 @@
 <html>
   <style>
     body {
-      margin-top: 8vh;
-      margin-bottom: 8vh;
-      margin-right: 2vw;
-      margin-left: 2vw;
+      margin-top: 0;
+      margin-bottom: 0;
+      margin-right: 0;
+      margin-left: 0;
       max-height: 100vh;
       font-weight: bold;
       font-family: Arial, sans-serif;
@@ -13,7 +13,7 @@
     #description {
       min-width: 100%;
       text-align: center;
-      font-size: 0.7rem; /* 0.7rem voor 3 lijnen */
+      font-size: 7.5pt; /* This exactly fits 2 lines of text in */
       margin: 0;
       padding: 0;
     }
@@ -26,20 +26,18 @@
     }
 
     #supercontainer {
-      height: 84vh;
+      height: 98vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: space-between;
     }
 
-    #barcode-container {
-      height: 60vh;
-    }
-
     #barcode {
-      width: 65vw;
-      height: 100%;
+      height: calc(0.9 * 25.93mm);
+      width: calc(0.9 * 37.29mm);
+      margin: 1mm;
+      padding: 0;
     }
 
     #price-container {
@@ -49,7 +47,7 @@
     #description {
       overflow: hidden;
       display: -webkit-box;
-      -webkit-line-clamp: 3; /* number of lines to show */
+      -webkit-line-clamp: 2; /* number of lines to show */
       -webkit-box-orient: vertical;
     }
   </style>
