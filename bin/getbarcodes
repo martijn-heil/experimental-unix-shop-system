@@ -1,0 +1,5 @@
+#!/bin/sh
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+
+forproduct /home/martijn/artikelen/artikelbestand.csv "BARCODE STUK" ',' 'OMSCHRIJVING' \
+  'csvgetcolval -n "BARCODE STUK"'
