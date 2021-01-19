@@ -43,13 +43,13 @@ colorder="$barcode_column,$(< "$csvfile" csvstat -d ',' -n | grep --invert-match
 < "$tempdir/data.csv" csvquote | tail -n +2 | sort -k 1,1 -t , > "$tempdir/data_sorted.csv"
 EOF
 chmod u+x "$tempexecutable"
-bash -c "$tempexecutable \"\$@\"" "null" "$csvfile" "$barcode_column" "$tempdir"
+bash -c "$tempexecutable \"\$@\"" "null" "$csvfile" "$barcode_column" "$tempdir" 1>&2
 
 inotify_exec_on_file_change "$csvfile" bash -c "$tempexecutable \"\$@\"" "null" "$csvfile" "$barcode_column" "$tempdir" &> /dev/null &
 
 
 function do_barcode_search {
-  echo -n "Enter barcode (press enter to go to manual search): "
+  echo -n "Enter barcode (press enter to go to manual search): " 1>&2
   read -r barcode
   if [ "$barcode" = "" ]; then
     return 2
@@ -57,7 +57,7 @@ function do_barcode_search {
   #results=$(cat "$tempdir/data.csv" | csvgrep -d , -c "$barcode_column" -r "^$barcode$")
   (cat <(head -n1 "$tempdir/data.csv") <(look -t, "$barcode" "$tempdir/data_sorted.csv" | csvquote -u)) > "$tempdir/results.csv"
   resultcount=$(< "$tempdir/results.csv" csvrowcount)
-  echo "Got $resultcount results."
+  echo "Got $resultcount results." 1>&2
   if [ "$resultcount" -le "0" ]; then
     return 1
   fi
@@ -72,7 +72,7 @@ function do_manual_search {
   else
     while :
     do
-      echo -n "Enter search query (press enter to stop): "
+      echo -n "Enter search query (press enter to stop): " 1>&2
       read -r query
       if [ "$query" = "" ]; then
         return 1
@@ -82,14 +82,14 @@ function do_manual_search {
       resultcount=$(< "$tempdir/results.csv" csvrowcount)
 
       if [ "$resultcount" -gt "1000" ]; then
-        echo -n "Got $resultcount results. Are you sure you want to view them all? [y/N]"
+        echo -n "Got $resultcount results. Are you sure you want to view them all? [y/N]" 1>&2
         read -r query
         if [ "$query" != "Y" ] && [ "$query" != "y" ]; then
           return 1
         fi
       fi
 
-      echo "Got $resultcount results."
+      echo "Got $resultcount results." 1>&2
       if [ "$resultcount" = "0" ]; then
         continue
       fi
@@ -102,7 +102,7 @@ while :
 do
   # Need to declare this or else it will complain about unbound variables
 
-  echo -e '\a'
+  echo -e '\a' 1>&2
   do_barcode_search
   do_barcode_search_result=$?
   if [ $do_barcode_search_result -eq 2 ]; then # request for manual search
@@ -110,9 +110,9 @@ do
     if [ "$?" = 1 ]; then # aborted
       continue
     elif [ $resultcount = "1" ]; then
-      echo "Got product:"
+      echo "Got product:"1>&2
       < "$tempdir/results.csv" csvlook -I
-      echo "Continue? [Y/n]"
+      echo "Continue? [Y/n]" 1>&2
       read -r cont
       if [ "$cont" != ''  ] && [ "$cont" != "y" ]; then
         continue
@@ -125,7 +125,7 @@ do
   result="$(csvselectrow --fzf "$tempdir/results.csv")"
   csvselectresult=$?
   if [ $csvselectresult -eq 2 ]; then # aborted
-    echo "Aborted selection."
+    echo "Aborted selection." 1>&2
     continue
   fi
 
