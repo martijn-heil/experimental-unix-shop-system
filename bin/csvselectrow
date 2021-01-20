@@ -121,8 +121,7 @@ fi
 function do_line_based {
   < "$tmpdir/input_numbered.csv" sed -E '1 s/^line_number(.*)$/ROW NUMBER\1/' | csvlook -I >> /dev/stderr
   while : ; do
-    echo -n "Select row number (press enter to abort selection): " >> /dev/stderr
-    read -r num
+    read -erp "Select row number (press enter to abort selection): " num
     if [ "$num" = '' ]; then
       exit 2
     fi
