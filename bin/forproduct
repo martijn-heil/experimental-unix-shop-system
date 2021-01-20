@@ -49,8 +49,7 @@ inotify_exec_on_file_change "$csvfile" bash -c "$tempexecutable \"\$@\"" "null" 
 
 
 function do_barcode_search {
-  echo -n "Enter barcode (press enter to go to manual search): " 1>&2
-  read -r barcode
+  read -erp "Enter barcode (press enter to go to manual search): " barcode
   if [ "$barcode" = "" ]; then
     return 2
   fi
@@ -72,8 +71,7 @@ function do_manual_search {
   else
     while :
     do
-      echo -n "Enter search query (press enter to stop): " 1>&2
-      read -r query
+      read -erp "Enter search query (press enter to stop): " query
       if [ "$query" = "" ]; then
         return 1
       fi
@@ -82,8 +80,7 @@ function do_manual_search {
       resultcount=$(< "$tempdir/results.csv" csvrowcount)
 
       if [ "$resultcount" -gt "1000" ]; then
-        echo -n "Got $resultcount results. Are you sure you want to view them all? [y/N]" 1>&2
-        read -r query
+        read -erp "Got $resultcount results. Are you sure you want to view them all? [y/N]" query
         if [ "$query" != "Y" ] && [ "$query" != "y" ]; then
           return 1
         fi
@@ -113,7 +110,7 @@ do
       echo "Got product:"1>&2
       < "$tempdir/results.csv" csvlook -I
       echo "Continue? [Y/n]" 1>&2
-      read -r cont
+      read -erp "Continue? [Y/n]" cont
       if [ "$cont" != ''  ] && [ "$cont" != "y" ]; then
         continue
       fi
