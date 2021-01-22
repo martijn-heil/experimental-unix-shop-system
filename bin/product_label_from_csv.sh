@@ -17,4 +17,4 @@ else
   price="$mooieprijs_comma"
 fi
 
-productlabel --barcode "$barcode" --price "$price" --description "$description" --page-height 32mm --page-width 57mm --template "$HOME/etc/productlabel/template.html"
+productlabel --barcode "$barcode" --price "$price" --description "$description" --page-height 32mm --page-width 57mm --template "/usr/local/etc/productlabel/template.html"
