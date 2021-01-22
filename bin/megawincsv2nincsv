@@ -1,0 +1,67 @@
+#!/bin/bash
+set -euo pipefail
+
+# Usage: vetusxml2megawincsv.sh <FILE> > result.csv
+tmpdir=$(mktemp -d)
+
+function cleanup {
+  rm -rf "$tmpdir"
+}
+
+trap cleanup EXIT
+
+cat /dev/stdin > "$tmpdir/megawin.csv"
+
+< "$tmpdir/megawin.csv" csvcut -d ',' -c 'ARTIKEL NR.,BARCODE STUK,LANGE OMSCHRIJVING1,OPMERKING' | csv2nix | tail -n +2 > "$tmpdir/cut.csv"
+< "$tmpdir/megawin.csv" csvcut -d ',' -c 'BTW%, VERK.PRIJS3' > "$tmpdir/prijs.csv" # VERK.PRIJS3 is 'particulier'
+
+newheader="ARTIKEL NR.,BARCODE,OMSCHRIJVING,OPMERKING,VERKOOPPRIJS"
+
+cat \
+  <(echo "$newheader") \
+  <(paste -d , "$tmpdir/cut.csv" <(./csvberekenbtw "$tmpdir/prijs.csv" "BTW%" " VERK.PRIJS3" | csv2nix) | nix2csv)
+
+
+# Available columns:
+#
+# 'ARTIKEL NR.'
+# 'OMSCHRIJVING:'
+# 'ARTIKEL GROEP'
+# 'SUB-GROEP'
+# 'AFDELING'
+# 'BTW%'
+# 'Aankoopprijs'
+# 'KOSTEN PRIJS'
+# ' VERK.PRIJS1'
+# ' VERK.PRIJS2'
+# ' VERK.PRIJS3'
+# ' VERK.PRIJS4'
+# ' VERK.PRIJS5'
+# 'AANTAL/DOOS'
+# 'EENHEID'
+# 'EENHEID_2'
+# 'VERPAKKING'
+# 'N. GEWICHT'
+# 'B. GEWICHT'
+# 'MUNTHEID'
+# 'BARCODE STUK'
+# 'OPMERKING'
+# 'MIN. AANTAL'
+# 'INTRA-STAT Nr.'
+# 'LEVERANCIER'
+# 'LEVER. ART. Nr.'
+# 'LANGE OMSCHRIJVING1'
+# 'LANGE OMSCHRIJVING2'
+# 'LANGE OMSCHRIJVING3'
+# 'LANGE OMSCHRIJVING4'
+# 'BARCODE DOOS'
+# 'BRUTO AK-PRIJS'
+# 'KORTING A.P.%'
+# 'STATIEGELD STUK'
+# 'STATIGELD DOOS'
+# 'Promo ex. prijs'
+# 'Promo inc. prijs'
+# 'Promo begin'
+# 'Promo einde'
+# 'Photo'
+# 'Colonne1'

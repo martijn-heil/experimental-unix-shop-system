@@ -1,0 +1,2 @@
+#!/bin/sh
+in2csv -f xls -I | grep -v '^WARNING *** '
