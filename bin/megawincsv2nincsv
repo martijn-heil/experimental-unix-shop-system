@@ -1,7 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-# Usage: vetusxml2megawincsv.sh <FILE> > result.csv
 tmpdir=$(mktemp -d)
 
 function cleanup {
