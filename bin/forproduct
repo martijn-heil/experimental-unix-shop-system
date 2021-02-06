@@ -54,7 +54,7 @@ function do_barcode_search {
     return 2
   fi
   #results=$(cat "$tempdir/data.csv" | csvgrep -d , -c "$barcode_column" -r "^$barcode$")
-  (cat <(head -n1 "$tempdir/data.csv") <(look -t, "$barcode" "$tempdir/data_sorted.csv" | csvquote -u)) > "$tempdir/results.csv"
+  (cat <(head -n1 "$tempdir/data.csv") <(look -t, -d "$barcode" "$tempdir/data_sorted.csv" | csvquote -u)) > "$tempdir/results.csv"
   resultcount=$(< "$tempdir/results.csv" csvrowcount)
   echo "Got $resultcount results." 1>&2
   if [ "$resultcount" -le "0" ]; then
