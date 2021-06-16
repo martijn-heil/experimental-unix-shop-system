@@ -55,7 +55,6 @@ if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
 fi
 
 eval set -- "$PARSED"
-# bounding polygon in Well Known Text (WKT), de coordinaten in RD
 DIALOG=false
 FZF=false
 SEARCH=true
