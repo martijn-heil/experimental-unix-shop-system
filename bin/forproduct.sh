@@ -47,9 +47,26 @@ bash -c "$tempexecutable \"\$@\"" "null" "$csvfile" "$barcode_column" "$tempdir"
 
 inotify_exec_on_file_change "$csvfile" bash -c "$tempexecutable \"\$@\"" "null" "$csvfile" "$barcode_column" "$tempdir" &> /dev/null &
 
+ntimes="1"
+
+function separate_barcode_and_amount {
+  local input="$1"
+  local barcode="$(sed -e 's/([0-9]+x)?(.*)')/\2/' <<< "$1")"
+  local amount="$(sed -e 's/([0-9]+x)?(.*)')/\1/' <<< "$1")"
+  if [ "$amount" = "" ]; then
+    amount="1"
+  fi
+  echo "$amount"
+  echo "$barcode"
+}
 
 function do_barcode_search {
-  read -erp "Enter barcode (press enter to go to manual search): " barcode
+  read -erp "Enter barcode (press enter to go to manual search): " input
+  readarray -t results < <(separate_barcode_and_amount "$input")
+  local amount="${results[0]}"
+  local barcode="${results[1]}"
+  ntimes="$amount"
+  
   if [ "$barcode" = "" ]; then
     return 2
   fi
@@ -131,5 +148,7 @@ do
   fi
 
   # TODO maybe add option for async or not async callback
-  echo "$result" | bash -c "$@" &
+  for i in $(seq "$ntimes"); do
+    echo "$result" | bash -c "$@" &
+  done
 done
