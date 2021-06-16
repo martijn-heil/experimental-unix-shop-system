@@ -51,8 +51,8 @@ ntimes="1"
 
 function separate_barcode_and_amount {
   local input="$1"
-  local barcode="$(sed -e 's/([0-9]+x)?(.*)')/\2/' <<< "$input")"
-  local amount="$(sed -e 's/([0-9]+x)?(.*)')/\1/' <<< "$input")"
+  local barcode="$(sed -E 's/([0-9]+x)?(.*)')/\2/' <<< "$input")"
+  local amount="$(sed -E 's/([0-9]+x)?(.*)')/\1/' <<< "$input")"
   if [ "$amount" = "" ]; then
     amount="1"
   fi
