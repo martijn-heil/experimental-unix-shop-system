@@ -95,11 +95,15 @@ function do_manual_search {
   fi
 }
 
+function ring_bell {
+  echo -e '\a' 1>&2
+}
+
 while :
 do
   # Need to declare this or else it will complain about unbound variables
 
-  echo -e '\a' 1>&2
+  ring_bell
   do_barcode_search
   do_barcode_search_result=$?
   if [ $do_barcode_search_result -eq 2 ]; then # request for manual search
