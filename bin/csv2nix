@@ -1,2 +1,2 @@
 #!/bin/bash
-csvquote | csvremovequoting2
+csvquote | csvremovequoting

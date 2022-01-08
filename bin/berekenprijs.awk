@@ -7,7 +7,7 @@ BEGIN {
 {
   # Replace 0x1F (ASCII: 'Unit Separator') with .
   # This script expects as input a CSV file escaped by use of csvquote,
-  # and then processed by csvremovequoting2.
+  # and then processed by csvremovequoting.
   #
   # csvquote replaces every comma inside a field with the 'Unit Seperator' non-printable character
   # Because fractional numbers are written with a comma instead of a decimal point, we replace the
