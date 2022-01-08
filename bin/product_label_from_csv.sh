@@ -11,7 +11,7 @@ price="$(<<< "$product" csvgetcolval -n "$price_column")"
 if [ "$price" = "" ] || [ "$price" = '0,00' ]; then
   price="????"
 else
-  price_point="$(echo "$price" | comma2point)"
+  price_point="$(echo "$price" | sed 's/\,/\./')"
   mooieprijs_point="$(mooieprijs.sh "$price_point")"
   mooieprijs_comma="$(echo "$mooieprijs_point" | point2comma)"
   price="$mooieprijs_comma"
